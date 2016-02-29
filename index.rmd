@@ -1,0 +1,104 @@
+---
+title: "Machine Learning Project"
+author: "Rich Banks"
+date: "February 29, 2016"
+output: html_document
+---
+### Backgroud 
+Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+### Importing Data
+
+First I'm going to load the "caret" ,"rpart(.plot)" "randomForest" libraries and then assign to the variables "data" and "testData3" the training and test datasets. Lets be sure to set.seed so that the anlaysis can be reproduced consistently.
+
+
+```{r}
+library(caret)
+library(randomForest)
+
+library(rpart)
+library(rpart.plot)
+set.seed(9999)
+data <- read.csv("pml-training.csv" , na.strings = c("NA", ""))
+testData3 <- read.csv("pml-testing.csv")
+```
+
+### Tidyig up the data
+The first 7 columns are of no use to us for completing the model..variables such as X, user_name ,timestamps etc...
+We also want to remove variables NAs
+
+```{r}
+drops <- c(1:7)
+data1 <- data[,-drops]
+data2 <- data1[,colSums(is.na(data1))==0]
+```
+
+### Partitioning the data
+Next, we'll partition the training data with 75% of the inputs and assign the remaining to a test dataset. 
+
+```{r}
+
+trainidx <- createDataPartition(y = data2$classe, p= 3/4, list=FALSE)
+trainingData <- data2[trainidx,]
+testData <- data2[-trainidx,]
+
+```
+
+### Applying the Random Forest model to the data
+We will apply the random forest model to the data. It is a very popular and precise model to use. 
+According to Leo Breiman and Adele Cutler (https://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm) , it is extremely accurate and works well with large datasets. 
+```{r}
+RFControl <- trainControl(method="cv", 5)
+RFModel <- train(classe ~ ., data=trainingData, method="rf", trControl=RFControl, ntree=250)
+RFModel
+```
+
+### Performace
+
+
+```{r}
+RFPredict <- predict(RFModel, testData)
+confusionMatrix(testData$classe, RFPredict)
+```
+We see here that it performed VERY well with an accuracy of ~ 99%
+
+### Testing against the test data
+
+```{r}
+TestPred <- predict(RFModel, testData3)
+TestPred
+```
+
+
+### Extra : Decision Tree
+
+
+```{r}
+DecTree <- rpart(classe ~ ., data=trainingData, method="class")
+prp(DecTree)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
